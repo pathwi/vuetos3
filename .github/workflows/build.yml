@@ -3,36 +3,28 @@ name: CI/CD Pipeline
 on:
   push:
     branches: [ main ]
-
+  pull_request:
+    branches: [ main ]
 
 jobs:
 
   continuous-integration:
+
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [10.x, 12.x, 14.x, 15.x]
 
     steps:
       - uses: actions/checkout@v2
-
-      - name: Cache node modules
-        uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
         with:
-          path: node_modules
-          key: ${{ runner.OS }}-build-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.OS }}-build-
-            ${{ runner.OS }}-
-
-      - name: Install
-        run: npm install
-
-      - name: Lint
-        run: npm run lint
-
-      - name: Test
-        run: npm run test:unit
-
-      - name: Build
-        run: npm run build
+          node-version: ${{ matrix.node-version }}
+      - run: npm ci
+      - run: npm run build --if-present
+      - run: npm test
         
   continuous-deployment:
    runs-on: ubuntu-latest
